@@ -1,0 +1,25 @@
+name: "E-commerce Load Test"
+
+target: "http://localhost:8080"
+
+duration: 5
+
+concurrency: 100
+
+scenarios:
+  - name: "Get Products"
+    weight: 70
+    request:
+      method: GET
+      path: "/products"
+
+  - name: "Login"
+    weight: 30
+    request:
+      method: POST
+      path: "/login"
+      headers:
+        Content-Type: application/json
+      body:
+        email: "demo@test.com"
+        password: "123456"
