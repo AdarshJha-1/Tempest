@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/AdarshJha-1/Tempest/internal/config"
+	"github.com/AdarshJha-1/Tempest/internal/job"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/google/uuid"
 )
@@ -16,7 +18,12 @@ type Store interface {
 	Init() error
 	Close() error
 	Insert(name string, configByte []byte) error
-	GetByID(jobId string) ([]byte, error)
+	GetJobConfigById(jobId string) ([]byte, error)
+	UpdateJobStatusById(jobId string, status string) error
+	UpdateJobFinishTimeById(jobId string) error
+
+	ListAllJob() ([]job.Job, error)
+	ListAllJobConfig() ([]config.Config, error)
 }
 
 type store struct {
@@ -98,14 +105,111 @@ func (s *store) Insert(name string, configByte []byte) error {
 	return nil
 }
 
-func (s *store) GetByID(jobId string) ([]byte, error) {
+func (s *store) GetJobConfigById(jobId string) ([]byte, error) {
 
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
 
 	var configData []byte
-	err := s.db.QueryRowContext(ctx, SELECT_JOB_BY_ID_STMT,
+	err := s.db.QueryRowContext(ctx, SELECT_JOB_CONFIG_BY_ID_STMT,
 		jobId,
 	).Scan(&configData)
 	return configData, err
+}
+
+func (s *store) UpdateJobStatusById(jobId string, status string) error {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, UPDATE_JOB_STATUS_BY_ID_STMT,
+		status,
+		time.Now(),
+		jobId,
+	)
+	if err != nil {
+		log.Printf("%q: %s\n", err, UPDATE_JOB_STATUS_BY_ID_STMT)
+		return err
+	}
+	return nil
+}
+
+func (s *store) UpdateJobFinishTimeById(jobId string) error {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, UPDATE_JOB_STATUS_BY_ID_STMT,
+		time.Now(),
+		jobId,
+	)
+	if err != nil {
+		log.Printf("%q: %s\n", err, UPDATE_JOB_STATUS_BY_ID_STMT)
+		return err
+	}
+	return nil
+}
+
+func (s *store) ListAllJobConfig() ([]config.Config, error) {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, GET_ALL_JOB_CONFIG)
+
+	if err != nil {
+		log.Printf("%q: %s\n", err, UPDATE_JOB_STATUS_BY_ID_STMT)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var configs []config.Config
+	for rows.Next() {
+		var config config.Config
+		err := rows.Scan(&config)
+		if err != nil {
+			return nil, err
+		}
+
+		configs = append(configs, config)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return configs, nil
+}
+
+func (s *store) ListAllJob() ([]job.Job, error) {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, GET_ALL_JOB)
+
+	if err != nil {
+		log.Printf("%q: %s\n", err, UPDATE_JOB_STATUS_BY_ID_STMT)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var jobs []job.Job
+	for rows.Next() {
+		var j job.Job
+		err := rows.Scan(
+			&j.ID,
+			&j.Name,
+			&j.Status,
+			&j.ConfigJSON,
+			&j.CreatedAt,
+			&j.StartedAt,
+			&j.FinishedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, j)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
 }

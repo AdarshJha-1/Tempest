@@ -31,19 +31,16 @@ func (q *queue) PushJobID(jobID string) error {
 	return err
 }
 
-// FIFO manner
 func (q *queue) GetJobID() (string, error) {
 
-	// for later use
-	// ctx, cancel := context.WithTimeout(q.ctx, 2*time.Second)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(q.ctx, 2*time.Second)
+	defer cancel()
 
-	// TODO change to stream thing idk like BLop something
-	jobID, err := q.rdb.LPop(context.Background(), "jobs").Result()
+	result, err := q.rdb.BLPop(ctx, 0, "jobs").Result()
 	if err != nil {
 		return "", err
 	}
-	return jobID, nil
+	return result[1], nil
 }
 
 func New() Queue {

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/AdarshJha-1/Tempest/internal/store"
-	"github.com/AdarshJha-1/Tempest/pkg"
 	"github.com/AdarshJha-1/Tempest/testdata"
 	"github.com/goccy/go-yaml"
 	"github.com/joho/godotenv"
@@ -55,15 +55,24 @@ func main() {
 	err = store.Insert(usrConfig.Name, configByte)
 	check(err)
 
-	currJobID, err := que.GetJobID()
+	time.Sleep(10 * time.Second)
+	jobs, err := store.ListAllJob()
 	check(err)
+	for _, job := range jobs {
+		fmt.Println(job.Name)
+		fmt.Println(job.Status)
+		fmt.Println(job.FinishedAt)
+	}
+	// TODO causing error OMG
+	// currJobID, err := que.GetJobID()
+	// check(err)
 
-	configData, err := store.GetByID(currJobID)
-	check(err)
+	// configData, err := store.GetJobConfigByID(currJobID)
+	// check(err)
 
-	var cfg config.Config
-	err = json.Unmarshal(configData, &cfg)
-	check(err)
+	// var cfg config.Config
+	// err = json.Unmarshal(configData, &cfg)
+	// check(err)
 
-	pkg.PrettyPrintJSON(cfg)
+	// pkg.PrettyPrintJSON(cfg)
 }
