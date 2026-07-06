@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -18,18 +19,26 @@ type queue struct {
 }
 
 func (q *queue) Ping() (string, error) {
-	return q.rdb.Ping(q.ctx).Result()
+	ctx, cancel := context.WithTimeout(q.ctx, 2*time.Second)
+	defer cancel()
+	return q.rdb.Ping(ctx).Result()
 }
 
 func (q *queue) PushJobID(jobID string) error {
-
-	_, err := q.rdb.RPush(q.ctx, "jobs", jobID).Result()
-
+	ctx, cancel := context.WithTimeout(q.ctx, 2*time.Second)
+	defer cancel()
+	_, err := q.rdb.RPush(ctx, "jobs", jobID).Result()
 	return err
 }
 
 // FIFO manner
 func (q *queue) GetJobID() (string, error) {
+
+	// for later use
+	// ctx, cancel := context.WithTimeout(q.ctx, 2*time.Second)
+	// defer cancel()
+
+	// TODO change to stream thing idk like BLop something
 	jobID, err := q.rdb.LPop(context.Background(), "jobs").Result()
 	if err != nil {
 		return "", err
@@ -37,7 +46,7 @@ func (q *queue) GetJobID() (string, error) {
 	return jobID, nil
 }
 
-func NewQueue() Queue {
+func New() Queue {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
