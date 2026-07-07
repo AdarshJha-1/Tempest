@@ -9,7 +9,6 @@ import (
 
 	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/job"
-	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/google/uuid"
 )
 
@@ -17,30 +16,29 @@ type Store interface {
 	Ping() error
 	Init() error
 	Close() error
-	Insert(name string, configByte []byte) error
+	Insert(name string, configByte []byte) (string, error)
 	GetJobConfigById(jobId string) ([]byte, error)
 	UpdateJobStatusById(jobId string, status string) error
 	UpdateJobFinishTimeById(jobId string) error
-
 	ListAllJob() ([]job.Job, error)
 	ListAllJobConfig() ([]config.Config, error)
+
+	Clean() error
 }
 
 type store struct {
-	ctx   context.Context
-	db    *sql.DB
-	queue queue.Queue
+	ctx context.Context
+	db  *sql.DB
 }
 
-func New(queue queue.Queue) (Store, error) {
+func New() (Store, error) {
 	newDB, err := sql.Open("sqlite3", "store.db")
 	if err != nil {
 		return nil, err
 	}
 	return &store{
-		ctx:   context.Background(),
-		db:    newDB,
-		queue: queue,
+		ctx: context.Background(),
+		db:  newDB,
 	}, nil
 }
 
@@ -64,14 +62,14 @@ func (s *store) Close() error {
 	return s.db.Close()
 }
 
-func (s *store) Insert(name string, configByte []byte) error {
+func (s *store) Insert(name string, configByte []byte) (string, error) {
 
 	newUUID := uuid.NewString()
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer tx.Rollback()
 
@@ -86,23 +84,17 @@ func (s *store) Insert(name string, configByte []byte) error {
 
 	if err != nil {
 		fmt.Println("Transaction failed on step 1:", err)
-		return err
+		return "", err
 	}
 	_, err = result.LastInsertId()
 	if err != nil {
-		return err
+		return "", err
 	}
 	if err := tx.Commit(); err != nil {
 		log.Println("Commit failed")
-		return err
+		return "", err
 	}
-
-	err = s.queue.PushJobID(newUUID)
-	if err != nil {
-		log.Println("Redis -> failed to push job")
-		return err
-	}
-	return nil
+	return newUUID, nil
 }
 
 func (s *store) GetJobConfigById(jobId string) ([]byte, error) {
@@ -212,4 +204,12 @@ func (s *store) ListAllJob() ([]job.Job, error) {
 	}
 
 	return jobs, nil
+}
+
+func (s *store) Clean() error {
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+	_, err := s.db.ExecContext(ctx, CLEAN_DB)
+	return err
 }

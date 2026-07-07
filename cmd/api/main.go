@@ -29,6 +29,7 @@ func main() {
 		log.Println("No .env file found, reading from system environment")
 	}
 
+	// TODO -> i think this all will be done via terminal so it need to change
 	var usrConfig config.Config
 	err := yaml.Unmarshal([]byte(testdata.YmlData), &usrConfig)
 	check(err)
@@ -38,7 +39,7 @@ func main() {
 	check(err)
 	fmt.Println("PING REDIS OKK", resStr)
 
-	store, err := store.New(que)
+	store, err := store.New()
 	check(err)
 	defer store.Close()
 
@@ -52,7 +53,10 @@ func main() {
 	configByte, err := json.Marshal(usrConfig)
 	check(err)
 
-	err = store.Insert(usrConfig.Name, configByte)
+	jobId, err := store.Insert(usrConfig.Name, configByte)
+	check(err)
+
+	err = que.PushJobID(jobId)
 	check(err)
 
 	time.Sleep(10 * time.Second)
@@ -61,7 +65,6 @@ func main() {
 	for _, job := range jobs {
 		fmt.Println(job.Name)
 		fmt.Println(job.Status)
-		fmt.Println(job.FinishedAt)
 	}
 	// TODO causing error OMG
 	// currJobID, err := que.GetJobID()

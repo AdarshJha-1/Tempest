@@ -29,7 +29,7 @@ func main() {
 	check(err)
 	fmt.Println("PING REDIS OKK", resStr)
 
-	store, err := store.New(que)
+	store, err := store.New()
 	check(err)
 	defer store.Close()
 

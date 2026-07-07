@@ -51,4 +51,8 @@ const (
 		SELECT config
 		FROM Jobs
 	`
+	CLEAN_DB = `
+		DELETE
+		FROM Jobs
+	`
 )
