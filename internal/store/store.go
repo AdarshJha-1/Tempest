@@ -129,12 +129,12 @@ func (s *store) UpdateJobFinishTimeById(jobId string) error {
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
 
-	_, err := s.db.ExecContext(ctx, UPDATE_JOB_STATUS_BY_ID_STMT,
+	_, err := s.db.ExecContext(ctx, UPDATE_JOB_FINISH_TIME_BY_ID_STMT,
 		time.Now(),
 		jobId,
 	)
 	if err != nil {
-		log.Printf("%q: %s\n", err, UPDATE_JOB_STATUS_BY_ID_STMT)
+		log.Printf("%q: %s\n", err, UPDATE_JOB_FINISH_TIME_BY_ID_STMT)
 		return err
 	}
 	return nil

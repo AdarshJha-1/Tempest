@@ -37,10 +37,9 @@ func main() {
 	check(err)
 	fmt.Println("PING DB OKK")
 
-	executor := executor.New(30)
+	executor := executor.New()
 
 	worker := worker.New(que, store, executor, 2)
 
 	worker.Start()
-
 }

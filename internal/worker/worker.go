@@ -15,10 +15,11 @@ type Worker interface {
 }
 
 type worker struct {
-	queue     queue.Queue
-	store     store.Store
-	executor  executor.Executor
-	workerCap int
+	queue      queue.Queue
+	store      store.Store
+	executor   executor.Executor
+	workerCap  int
+	currWorker int
 }
 
 func New(que queue.Queue, store store.Store, executor executor.Executor, workerCap int) Worker {
@@ -54,6 +55,7 @@ func (w *worker) Start() {
 		if err != nil {
 			continue
 		}
+
 		if resp {
 			w.store.UpdateJobStatusById(jobId, "success")
 			w.store.UpdateJobFinishTimeById(jobId)

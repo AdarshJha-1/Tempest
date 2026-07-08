@@ -2,9 +2,9 @@ name: "E-commerce Load Test"
 
 target: "http://localhost:8080"
 
-duration: 5
+duration: "1m"
 
-concurrency: 100
+concurrency: 2
 
 scenarios:
   - name: "Sample Req"
