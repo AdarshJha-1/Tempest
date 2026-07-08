@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"go/types"
 	"log"
 	"time"
 
-	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/job"
 	"github.com/google/uuid"
 )
@@ -21,7 +21,7 @@ type Store interface {
 	UpdateJobStatusById(jobId string, status string) error
 	UpdateJobFinishTimeById(jobId string) error
 	ListAllJob() ([]job.Job, error)
-	ListAllJobConfig() ([]config.Config, error)
+	ListAllJobConfig() ([]types.Config, error)
 
 	Clean() error
 }
@@ -140,7 +140,7 @@ func (s *store) UpdateJobFinishTimeById(jobId string) error {
 	return nil
 }
 
-func (s *store) ListAllJobConfig() ([]config.Config, error) {
+func (s *store) ListAllJobConfig() ([]types.Config, error) {
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
 
@@ -152,9 +152,9 @@ func (s *store) ListAllJobConfig() ([]config.Config, error) {
 	}
 	defer rows.Close()
 
-	var configs []config.Config
+	var configs []types.Config
 	for rows.Next() {
-		var config config.Config
+		var config types.Config
 		err := rows.Scan(&config)
 		if err != nil {
 			return nil, err

@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AdarshJha-1/Tempest/internal/config"
+	"github.com/AdarshJha-1/Tempest/internal/types"
 )
 
 type Executor interface {
-	Run(cfg *config.Config) (bool, error)
+	Run(cfg *types.Config) (*types.Result, error)
 }
 
 type executor struct {
@@ -25,13 +25,14 @@ func New() Executor {
 	}
 }
 
-func (e *executor) Run(cfg *config.Config) (bool, error) {
+func (e *executor) Run(cfg *types.Config) (*types.Result, error) {
 
 	wg := sync.WaitGroup{}
+	result := &types.Result{}
 
 	parsedDuration, err := time.ParseDuration(cfg.Duration)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	tp := NewTestPlan(cfg.Target, parsedDuration, cfg.Concurrency, cfg.Scenarios)
 
@@ -39,12 +40,12 @@ func (e *executor) Run(cfg *config.Config) (bool, error) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			e.virtualUser(tp)
+			e.virtualUser(tp, result)
 		}()
 	}
 	wg.Wait()
 
-	return true, nil
+	return result, nil
 }
 
 type testPlan struct {
@@ -52,10 +53,10 @@ type testPlan struct {
 	duration    time.Duration
 	concurrency int
 
-	scenarios []config.Scenario
+	scenarios []types.Scenario
 }
 
-func NewTestPlan(target string, duration time.Duration, concurrency int, scenarios []config.Scenario) *testPlan {
+func NewTestPlan(target string, duration time.Duration, concurrency int, scenarios []types.Scenario) *testPlan {
 	return &testPlan{
 		target:      target,
 		duration:    duration,
@@ -64,7 +65,7 @@ func NewTestPlan(target string, duration time.Duration, concurrency int, scenari
 	}
 }
 
-func (p *testPlan) buildRequest(s *config.Scenario) (*http.Request, error) {
+func (p *testPlan) buildRequest(s *types.Scenario) (*http.Request, error) {
 	var body io.Reader = nil
 	if s.Request.Method == "POST" {
 	}
@@ -73,7 +74,7 @@ func (p *testPlan) buildRequest(s *config.Scenario) (*http.Request, error) {
 	return req, err
 }
 
-func (p *testPlan) pickScenario() *config.Scenario {
+func (p *testPlan) pickScenario() *types.Scenario {
 	randV := rand.Intn(100)
 
 	for i, s := range p.scenarios {
@@ -84,7 +85,7 @@ func (p *testPlan) pickScenario() *config.Scenario {
 	return nil
 }
 
-func (e *executor) virtualUser(p *testPlan) error {
+func (e *executor) virtualUser(p *testPlan, result *types.Result) {
 
 	timer := time.NewTimer(p.duration)
 
@@ -92,7 +93,6 @@ func (e *executor) virtualUser(p *testPlan) error {
 		select {
 		case <-timer.C:
 			fmt.Println("work done!")
-			return nil
 		default:
 			scenario := p.pickScenario()
 			if scenario == nil {
@@ -100,13 +100,16 @@ func (e *executor) virtualUser(p *testPlan) error {
 			}
 			request, err := p.buildRequest(scenario)
 			if err != nil {
-				return err
+				continue
 			}
+			start := time.Now()
 			resp, err := e.client.Do(request)
-			time.Sleep(1 * time.Second)
+			latency := time.Since(start)
 			if err != nil {
-				return err
+				result.RecordNetworkError(latency)
+				continue
 			}
+			result.Record(resp.StatusCode, latency)
 			resp.Body.Close()
 		}
 	}

@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/executor"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/AdarshJha-1/Tempest/internal/store"
+	"github.com/AdarshJha-1/Tempest/internal/types"
 )
 
 type Worker interface {
@@ -31,6 +31,8 @@ func New(que queue.Queue, store store.Store, executor executor.Executor, workerC
 }
 
 func (w *worker) Start() {
+
+	// currently my each job is processed one by one
 	for {
 		jobId, err := w.queue.GetJobID()
 		if err != nil {
@@ -42,7 +44,7 @@ func (w *worker) Start() {
 		if err != nil {
 			continue
 		}
-		var cfg config.Config
+		var cfg types.Config
 		err = json.Unmarshal(configBytes, &cfg)
 		if err != nil {
 			continue
@@ -50,14 +52,14 @@ func (w *worker) Start() {
 
 		w.store.UpdateJobStatusById(jobId, "running")
 
-		resp, err := w.executor.Run(&cfg)
+		result, err := w.executor.Run(&cfg)
 		if err != nil {
+			w.store.UpdateJobStatusById(jobId, "failed")
+			w.store.UpdateJobFinishTimeById(jobId)
 			continue
 		}
 
-		if resp {
-			w.store.UpdateJobStatusById(jobId, "success")
-			w.store.UpdateJobFinishTimeById(jobId)
-		}
+		// here i need to save result
+
 	}
 }

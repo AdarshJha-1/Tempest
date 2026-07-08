@@ -48,7 +48,7 @@
 
         User Queries Results
         
-Config Parser → Reads and validates the config.
+Config Parser → Reads and validates the types.
 API/CLI → Creates a job.
 SQLite → Stores jobs and results.
 Redis → Acts as the queue.

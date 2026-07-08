@@ -3,12 +3,11 @@ package pkg
 import (
 	"encoding/json"
 	"fmt"
+	"go/types"
 	"log"
-
-	"github.com/AdarshJha-1/Tempest/internal/config"
 )
 
-func PrettyPrintJSON(cfg config.Config) {
+func PrettyPrintJSON(cfg types.Config) {
 	prettyJSON, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
 		log.Fatalf("Error marshaling: %s", err)

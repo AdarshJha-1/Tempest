@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/AdarshJha-1/Tempest/internal/store"
+	"github.com/AdarshJha-1/Tempest/internal/types"
 	"github.com/AdarshJha-1/Tempest/testdata"
 	"github.com/goccy/go-yaml"
 	"github.com/joho/godotenv"
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// TODO -> i think this all will be done via terminal so it need to change
-	var usrConfig config.Config
+	var usrConfig types.Config
 	err := yaml.Unmarshal([]byte(testdata.YmlData), &usrConfig)
 	check(err)
 
