@@ -20,7 +20,8 @@ func main() {
 	check(err)
 
 	arg := os.Args[1]
-	if arg == "st" { // show table
+	switch arg {
+	case "st": // show table
 		jobs, err := store.ListAllJob()
 		check(err)
 		for _, j := range jobs {
@@ -28,7 +29,7 @@ func main() {
 			fmt.Println(j.ID)
 			fmt.Println(j.Status)
 		}
-	} else if arg == "cl" { // remove all
+	case "cl": // remove all
 		err := store.Clean()
 		check(err)
 	}

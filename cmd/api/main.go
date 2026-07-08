@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
@@ -15,14 +14,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// TODO have to do better :/
 func check(e error) {
 	if e != nil {
 		log.Fatal(e)
 	}
 }
 
-// ugly aah code :)
 func main() {
 
 	if err := godotenv.Load(); err != nil {
@@ -58,24 +55,4 @@ func main() {
 
 	err = que.PushJobID(jobId)
 	check(err)
-
-	time.Sleep(10 * time.Second)
-	jobs, err := store.ListAllJob()
-	check(err)
-	for _, job := range jobs {
-		fmt.Println(job.Name)
-		fmt.Println(job.Status)
-	}
-	// TODO causing error OMG
-	// currJobID, err := que.GetJobID()
-	// check(err)
-
-	// configData, err := store.GetJobConfigByID(currJobID)
-	// check(err)
-
-	// var cfg config.Config
-	// err = json.Unmarshal(configData, &cfg)
-	// check(err)
-
-	// pkg.PrettyPrintJSON(cfg)
 }
