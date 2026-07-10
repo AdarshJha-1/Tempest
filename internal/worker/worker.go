@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/executor"
 	"github.com/AdarshJha-1/Tempest/internal/queue"
 	"github.com/AdarshJha-1/Tempest/internal/store"
-	"github.com/AdarshJha-1/Tempest/internal/types"
 )
 
 type Worker interface {
@@ -44,7 +44,7 @@ func (w *worker) Start() {
 		if err != nil {
 			continue
 		}
-		var cfg types.Config
+		var cfg config.Config
 		err = json.Unmarshal(configBytes, &cfg)
 		if err != nil {
 			continue
@@ -60,6 +60,22 @@ func (w *worker) Start() {
 		}
 
 		// here i need to save result
+		err = w.store.InsertResult(jobId, result)
+		if err != nil {
+			// idk what to do here
+			log.Println("failed to insert result in db", err)
+		}
 
+		err = w.store.UpdateJobStatusById(jobId, "completed")
+		if err != nil {
+			// idk what to do here
+			log.Println("failed to update job status in db", err)
+		}
+
+		err = w.store.UpdateJobFinishTimeById(jobId)
+		if err != nil {
+			// idk what to do here
+			log.Println("failed to update job finish time in db", err)
+		}
 	}
 }

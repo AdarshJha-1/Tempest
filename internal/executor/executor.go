@@ -2,17 +2,16 @@ package executor
 
 import (
 	"fmt"
-	"io"
-	"math/rand"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/AdarshJha-1/Tempest/internal/types"
+	"github.com/AdarshJha-1/Tempest/internal/config"
+	"github.com/AdarshJha-1/Tempest/internal/metrics"
 )
 
 type Executor interface {
-	Run(cfg *types.Config) (*types.Result, error)
+	Run(cfg *config.Config) (*metrics.Result, error)
 }
 
 type executor struct {
@@ -25,10 +24,10 @@ func New() Executor {
 	}
 }
 
-func (e *executor) Run(cfg *types.Config) (*types.Result, error) {
+func (e *executor) Run(cfg *config.Config) (*metrics.Result, error) {
 
 	wg := sync.WaitGroup{}
-	result := &types.Result{}
+	result := &metrics.Result{}
 
 	parsedDuration, err := time.ParseDuration(cfg.Duration)
 	if err != nil {
@@ -48,44 +47,7 @@ func (e *executor) Run(cfg *types.Config) (*types.Result, error) {
 	return result, nil
 }
 
-type testPlan struct {
-	target      string
-	duration    time.Duration
-	concurrency int
-
-	scenarios []types.Scenario
-}
-
-func NewTestPlan(target string, duration time.Duration, concurrency int, scenarios []types.Scenario) *testPlan {
-	return &testPlan{
-		target:      target,
-		duration:    duration,
-		concurrency: concurrency,
-		scenarios:   scenarios,
-	}
-}
-
-func (p *testPlan) buildRequest(s *types.Scenario) (*http.Request, error) {
-	var body io.Reader = nil
-	if s.Request.Method == "POST" {
-	}
-
-	req, err := http.NewRequest(s.Request.Method, p.target+s.Request.Path, body)
-	return req, err
-}
-
-func (p *testPlan) pickScenario() *types.Scenario {
-	randV := rand.Intn(100)
-
-	for i, s := range p.scenarios {
-		if randV <= s.Weight {
-			return &p.scenarios[i]
-		}
-	}
-	return nil
-}
-
-func (e *executor) virtualUser(p *testPlan, result *types.Result) {
+func (e *executor) virtualUser(p *testPlan, result *metrics.Result) {
 
 	timer := time.NewTimer(p.duration)
 
@@ -93,6 +55,7 @@ func (e *executor) virtualUser(p *testPlan, result *types.Result) {
 		select {
 		case <-timer.C:
 			fmt.Println("work done!")
+			return
 		default:
 			scenario := p.pickScenario()
 			if scenario == nil {

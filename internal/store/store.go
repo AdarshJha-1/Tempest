@@ -3,12 +3,13 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"go/types"
+
 	"log"
 	"time"
 
+	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/job"
+	"github.com/AdarshJha-1/Tempest/internal/metrics"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +22,10 @@ type Store interface {
 	UpdateJobStatusById(jobId string, status string) error
 	UpdateJobFinishTimeById(jobId string) error
 	ListAllJob() ([]job.Job, error)
-	ListAllJobConfig() ([]types.Config, error)
+	ListAllJobConfig() ([]config.Config, error)
+
+	InsertResult(jobId string, result *metrics.Result) error
+	ListAllResult() ([]*metrics.Result, error)
 
 	Clean() error
 }
@@ -50,9 +54,30 @@ func (s *store) Ping() error {
 }
 
 func (s *store) Init() error {
-	_, err := s.db.Exec(CREATE_TABLE_STMT)
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Printf("%q: %s\n", err, CREATE_TABLE_STMT)
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx,
+		CREATE_JOBS_TABLE_STMT,
+	)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx,
+		CREATE_RESULT_TABLE_STMT,
+	)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Println("Commit failed")
 		return err
 	}
 	return nil
@@ -83,7 +108,7 @@ func (s *store) Insert(name string, configByte []byte) (string, error) {
 	)
 
 	if err != nil {
-		fmt.Println("Transaction failed on step 1:", err)
+		log.Println("Transaction failed on step 1:", err)
 		return "", err
 	}
 	_, err = result.LastInsertId()
@@ -140,7 +165,7 @@ func (s *store) UpdateJobFinishTimeById(jobId string) error {
 	return nil
 }
 
-func (s *store) ListAllJobConfig() ([]types.Config, error) {
+func (s *store) ListAllJobConfig() ([]config.Config, error) {
 	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
 	defer cancel()
 
@@ -152,9 +177,9 @@ func (s *store) ListAllJobConfig() ([]types.Config, error) {
 	}
 	defer rows.Close()
 
-	var configs []types.Config
+	var configs []config.Config
 	for rows.Next() {
-		var config types.Config
+		var config config.Config
 		err := rows.Scan(&config)
 		if err != nil {
 			return nil, err
@@ -212,4 +237,64 @@ func (s *store) Clean() error {
 	defer cancel()
 	_, err := s.db.ExecContext(ctx, CLEAN_DB)
 	return err
+}
+
+func (s *store) InsertResult(jobId string, result *metrics.Result) error {
+
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, INSERT_RESULT_STMT,
+		jobId,
+		result.TotalRequests,
+		result.Success2xx,
+		result.Client4xx,
+		result.Server5xx,
+		result.NetworkErrors,
+		result.TotalLatency,
+	)
+	if err != nil {
+		log.Println("failed in insert result", err)
+	}
+	return err
+}
+
+func (s *store) ListAllResult() ([]*metrics.Result, error) {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, SELECT_ALL_RESULT_STMT)
+
+	if err != nil {
+		log.Printf("%q: %s\n", err, SELECT_ALL_RESULT_STMT)
+		return nil, err
+	}
+	defer rows.Close()
+
+	// this whole for temp db viewing thing so i will remove it eventually
+	var jobId string
+	var results []*metrics.Result
+	for rows.Next() {
+		r := &metrics.Result{}
+		err := rows.Scan(
+			&jobId,
+			&r.TotalRequests,
+			&r.Success2xx,
+			&r.Client4xx,
+			&r.Server5xx,
+			&r.NetworkErrors,
+			&r.TotalLatency,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, r)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

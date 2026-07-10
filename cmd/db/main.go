@@ -32,6 +32,18 @@ func main() {
 	case "cl": // remove all
 		err := store.Clean()
 		check(err)
+	case "sr":
+		results, err := store.ListAllResult()
+		check(err)
+		fmt.Println("HERE")
+		fmt.Println(results)
+		for _, r := range results {
+			fmt.Println(r.TotalLatency)
+			fmt.Println(r.TotalRequests)
+			fmt.Println(r.Success2xx)
+			fmt.Println(r.Client4xx)
+			fmt.Println(r.Server5xx)
+			fmt.Println(r.NetworkErrors)
+		}
 	}
-
 }

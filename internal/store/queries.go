@@ -1,7 +1,7 @@
 package store
 
 const (
-	CREATE_TABLE_STMT = `
+	CREATE_JOBS_TABLE_STMT = `
 		CREATE TABLE IF NOT EXISTS Jobs (
 			id TEXT NOT NULL PRIMARY KEY,
 			name TEXT NOT NULL,
@@ -54,5 +54,38 @@ const (
 	CLEAN_DB = `
 		DELETE
 		FROM Jobs
+	`
+)
+
+const (
+	CREATE_RESULT_TABLE_STMT = `
+		CREATE TABLE IF NOT EXISTS Results (
+			job_id TEXT PRIMARY KEY NOT NULL,
+			total_requests INTEGER,
+			success_2xx INTEGER,
+			client_4xx INTEGER,
+			server_5xx INTEGER,
+			network_errors INTEGER,
+			total_latency INTEGER,
+			
+			FOREIGN KEY (job_id) REFERENCES Jobs(id) ON DELETE CASCADE
+		)
+	`
+
+	INSERT_RESULT_STMT = `
+		INSERT INTO Results (
+			job_id,
+			total_requests,
+			success_2xx,
+			client_4xx,
+			server_5xx,
+			network_errors,
+			total_latency
+		) VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+
+	SELECT_ALL_RESULT_STMT = `
+		SELECT *
+		FROM Results
 	`
 )
