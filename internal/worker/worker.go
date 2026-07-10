@@ -40,7 +40,7 @@ func (w *worker) Start() {
 			continue
 		}
 
-		configBytes, err := w.store.GetJobConfigById(jobId)
+		configBytes, err := w.store.GetJobConfig(jobId)
 		if err != nil {
 			continue
 		}
@@ -50,29 +50,29 @@ func (w *worker) Start() {
 			continue
 		}
 
-		w.store.UpdateJobStatusById(jobId, "running")
+		w.store.UpdateJobStatus(jobId, "running")
 
 		result, err := w.executor.Run(&cfg)
 		if err != nil {
-			w.store.UpdateJobStatusById(jobId, "failed")
-			w.store.UpdateJobFinishTimeById(jobId)
+			w.store.UpdateJobStatus(jobId, "failed")
+			w.store.UpdateJobFinishTime(jobId)
 			continue
 		}
 
 		// here i need to save result
-		err = w.store.InsertResult(jobId, result)
+		err = w.store.CreateResult(jobId, result)
 		if err != nil {
 			// idk what to do here
 			log.Println("failed to insert result in db", err)
 		}
 
-		err = w.store.UpdateJobStatusById(jobId, "completed")
+		err = w.store.UpdateJobStatus(jobId, "completed")
 		if err != nil {
 			// idk what to do here
 			log.Println("failed to update job status in db", err)
 		}
 
-		err = w.store.UpdateJobFinishTimeById(jobId)
+		err = w.store.UpdateJobFinishTime(jobId)
 		if err != nil {
 			// idk what to do here
 			log.Println("failed to update job finish time in db", err)

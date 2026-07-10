@@ -22,7 +22,7 @@ func main() {
 	arg := os.Args[1]
 	switch arg {
 	case "st": // show table
-		jobs, err := store.ListAllJob()
+		jobs, err := store.ListJobs()
 		check(err)
 		for _, j := range jobs {
 			fmt.Println(j.Name)
@@ -33,7 +33,7 @@ func main() {
 		err := store.Clean()
 		check(err)
 	case "sr":
-		results, err := store.ListAllResult()
+		results, err := store.ListResults()
 		check(err)
 		fmt.Println("HERE")
 		fmt.Println(results)

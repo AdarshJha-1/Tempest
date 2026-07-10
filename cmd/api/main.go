@@ -27,8 +27,11 @@ func main() {
 	}
 
 	// TODO -> i think this all will be done via terminal so it need to change
-	var usrConfig config.Config
-	err := yaml.Unmarshal([]byte(testdata.YmlData), &usrConfig)
+	usrConfig := &config.Config{}
+	err := yaml.Unmarshal([]byte(testdata.YmlData), usrConfig)
+	check(err)
+
+	err = config.ConfigValidation(usrConfig)
 	check(err)
 
 	que := queue.New()
@@ -50,7 +53,7 @@ func main() {
 	configByte, err := json.Marshal(usrConfig)
 	check(err)
 
-	jobId, err := store.Insert(usrConfig.Name, configByte)
+	jobId, err := store.CreateJob(usrConfig.Name, configByte)
 	check(err)
 
 	err = que.PushJobID(jobId)
