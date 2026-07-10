@@ -37,6 +37,8 @@ func main() {
 		check(err)
 		fmt.Println("HERE")
 		fmt.Println(results)
+
+		// i copy lock here which is kind of not good thing
 		for _, r := range results {
 			fmt.Println(r.TotalLatency)
 			fmt.Println(r.TotalRequests)
