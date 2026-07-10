@@ -2,13 +2,13 @@ name: "E-commerce Load Test"
 
 target: "http://localhost:8080"
 
-duration: "1m"
+duration: "10s"
 
-concurrency: 2
+# concurrency: 2
 
 scenarios:
   - name: "Sample Req"
-    weight: 70
+    weight: 100
     request:
       method: GET
       path: "/"

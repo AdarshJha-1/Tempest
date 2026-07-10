@@ -1,7 +1,5 @@
 package config
 
-import "fmt"
-
 type Config struct {
 	Name        string     `yaml:"name"`
 	Target      string     `yaml:"target"`
@@ -21,9 +19,4 @@ type Request struct {
 	Path    string            `yaml:"path"`
 	Headers map[string]string `yaml:"headers"`
 	Body    map[string]any    `yaml:"body"`
-}
-
-func ConfigValidation(cfg *Config) error {
-	fmt.Println(cfg)
-	return nil
 }

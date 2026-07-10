@@ -24,7 +24,7 @@ type Store interface {
 	CreateResult(jobId string, result *metrics.Result) error
 	ListResults() ([]metrics.Result, error)
 
-	Clean() error
+	Reset() error
 }
 
 type store struct {
@@ -82,4 +82,30 @@ func (s *store) Init() error {
 
 func (s *store) Close() error {
 	return s.db.Close()
+}
+
+func (s *store) Reset() error {
+	ctx, cancel := context.WithTimeout(s.ctx, 2*time.Second)
+	defer cancel()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, DROP_JOBS_TABLE)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, DROP_RESULT_TABLE)
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Println("Commit failed")
+		return err
+	}
+	return nil
 }

@@ -31,8 +31,8 @@ func main() {
 	err := yaml.Unmarshal([]byte(testdata.YmlData), usrConfig)
 	check(err)
 
-	err = config.ConfigValidation(usrConfig)
-	check(err)
+	errs := config.Validate(usrConfig)
+	check(errs)
 
 	que := queue.New()
 	resStr, err := que.Ping()

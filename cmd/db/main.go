@@ -21,7 +21,7 @@ func main() {
 
 	arg := os.Args[1]
 	switch arg {
-	case "st": // show table
+	case "st":
 		jobs, err := store.ListJobs()
 		check(err)
 		for _, j := range jobs {
@@ -29,8 +29,8 @@ func main() {
 			fmt.Println(j.ID)
 			fmt.Println(j.Status)
 		}
-	case "cl": // remove all
-		err := store.Clean()
+	case "r":
+		err := store.Reset()
 		check(err)
 	case "sr":
 		results, err := store.ListResults()

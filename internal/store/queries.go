@@ -1,5 +1,16 @@
 package store
 
+// i might delete this
+const (
+	DROP_JOBS_TABLE = `
+		DROP TABLE IF EXISTS Jobs;
+	`
+
+	DROP_RESULT_TABLE = `
+		DROP TABLE IF EXISTS Results;
+	`
+)
+
 const (
 	CREATE_JOBS_TABLE_STMT = `
 		CREATE TABLE IF NOT EXISTS Jobs (

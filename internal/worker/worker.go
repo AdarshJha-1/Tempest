@@ -30,52 +30,55 @@ func New(que queue.Queue, store store.Store, executor executor.Executor, workerC
 	}
 }
 
-func (w *worker) Start() {
+func (w *worker) processJob(jobId string) error {
+	configBytes, err := w.store.GetJobConfig(jobId)
+	if err != nil {
+		return err
+	}
+	var cfg config.Config
+	err = json.Unmarshal(configBytes, &cfg)
+	if err != nil {
+		return err
+	}
 
-	// currently my each job is processed one by one
+	w.store.UpdateJobStatus(jobId, "running")
+
+	result, err := w.executor.Run(&cfg)
+	if err != nil {
+		w.store.UpdateJobStatus(jobId, "failed")
+		w.store.UpdateJobFinishTime(jobId)
+		return err
+	}
+
+	err = w.store.CreateResult(jobId, result)
+	if err != nil {
+		log.Println("failed to insert result in db", err)
+		return err
+	}
+
+	err = w.store.UpdateJobStatus(jobId, "completed")
+	if err != nil {
+		log.Println("failed to update job status in db", err)
+		return err
+	}
+
+	err = w.store.UpdateJobFinishTime(jobId)
+	if err != nil {
+		log.Println("failed to update job finish time in db", err)
+		return err
+	}
+	return nil
+}
+func (w *worker) Start() {
 	for {
 		jobId, err := w.queue.GetJobID()
 		if err != nil {
+			log.Println("error getting job from queue")
+			continue
+		}
+		if err := w.processJob(jobId); err != nil {
 			log.Println(err)
 			continue
-		}
-
-		configBytes, err := w.store.GetJobConfig(jobId)
-		if err != nil {
-			continue
-		}
-		var cfg config.Config
-		err = json.Unmarshal(configBytes, &cfg)
-		if err != nil {
-			continue
-		}
-
-		w.store.UpdateJobStatus(jobId, "running")
-
-		result, err := w.executor.Run(&cfg)
-		if err != nil {
-			w.store.UpdateJobStatus(jobId, "failed")
-			w.store.UpdateJobFinishTime(jobId)
-			continue
-		}
-
-		// here i need to save result
-		err = w.store.CreateResult(jobId, result)
-		if err != nil {
-			// idk what to do here
-			log.Println("failed to insert result in db", err)
-		}
-
-		err = w.store.UpdateJobStatus(jobId, "completed")
-		if err != nil {
-			// idk what to do here
-			log.Println("failed to update job status in db", err)
-		}
-
-		err = w.store.UpdateJobFinishTime(jobId)
-		if err != nil {
-			// idk what to do here
-			log.Println("failed to update job finish time in db", err)
 		}
 	}
 }
