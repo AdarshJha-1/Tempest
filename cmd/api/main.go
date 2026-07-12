@@ -26,7 +26,6 @@ func main() {
 		log.Println("No .env file found, reading from system environment")
 	}
 
-	// TODO -> i think this all will be done via terminal so it need to change
 	usrConfig := &config.Config{}
 	err := yaml.Unmarshal([]byte(testdata.YmlData), usrConfig)
 	check(err)
