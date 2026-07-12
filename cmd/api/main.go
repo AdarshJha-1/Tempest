@@ -23,7 +23,7 @@ func check(e error) {
 func main() {
 
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, reading from system environment")
+		log.Println("No .env file found, reading from system environment!")
 	}
 
 	usrConfig := &config.Config{}
