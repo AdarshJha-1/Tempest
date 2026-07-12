@@ -13,7 +13,8 @@ type Result struct {
 	Client4xx     int64
 	Server5xx     int64
 	NetworkErrors int64
-	TotalLatency  time.Duration
+
+	TotalLatency time.Duration
 }
 
 func (r *Result) Record(status int, latency time.Duration) {

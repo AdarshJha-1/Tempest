@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -20,7 +21,15 @@ type executor struct {
 
 func New() Executor {
 	return &executor{
-		client: &http.Client{},
+		client: &http.Client{
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout: 5 * time.Second,
+				}).DialContext,
+				TLSHandshakeTimeout:   5 * time.Second,
+				ResponseHeaderTimeout: 30 * time.Second,
+			},
+		},
 	}
 }
 
@@ -58,6 +67,7 @@ func (e *executor) virtualUser(p *testPlan, result *metrics.Result) {
 			return
 		default:
 			scenario := p.pickScenario()
+			fmt.Println("Picked:", scenario.Name)
 			if scenario == nil {
 				continue
 			}

@@ -1,31 +1,29 @@
-name: "E-commerce Load Test"
+name: "Tempest Example"
 
-target: "http://localhost:8080"
+target: "http://localhost:6969"
 
-duration: "10s"
+duration: "1m"
 
-# concurrency: 2
+concurrency: 2
 
 scenarios:
-  - name: "Sample Req"
-    weight: 100
+  - name: "Get Products"
+    weight: 60
     request:
       method: GET
-      path: "/"
+      path: "/products"
+      query:
+        page: "1"
+        limit: "10"
 
-  # - name: "Get Products"
-  #   weight: 70
-  #   request:
-  #     method: GET
-  #     path: "/products"
-
-  # - name: "Login"
-  #   weight: 30
-  #   request:
-  #     method: POST
-  #     path: "/login"
-  #     headers:
-  #       Content-Type: application/json
-  #     body:
-  #       email: "demo@test.com"
-  #       password: "123456"
+  - name: "Login"
+    weight: 40
+    request:
+      method: POST
+      path: "/login"
+      headers:
+        Content-Type: application/json
+        X-Client: Tempest
+      body:
+        email: "demo@test.com"
+        password: "123456"

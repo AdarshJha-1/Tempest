@@ -17,6 +17,7 @@ type Scenario struct {
 type Request struct {
 	Method  string            `yaml:"method"`
 	Path    string            `yaml:"path"`
+	Query   map[string]string `yaml:"query"`
 	Headers map[string]string `yaml:"headers"`
 	Body    map[string]any    `yaml:"body"`
 }
