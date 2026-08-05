@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/json"
 	"log"
+	"sync"
 
 	"github.com/AdarshJha-1/Tempest/internal/config"
 	"github.com/AdarshJha-1/Tempest/internal/executor"
@@ -69,7 +70,9 @@ func (w *worker) processJob(jobId string) error {
 	}
 	return nil
 }
-func (w *worker) Start() {
+
+func (w *worker) run(wg *sync.WaitGroup) {
+	defer wg.Done()
 	for {
 		jobId, err := w.queue.GetJobID()
 		if err != nil {
@@ -81,4 +84,14 @@ func (w *worker) Start() {
 			continue
 		}
 	}
+}
+
+func (w *worker) Start() {
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < w.workerCap; i++ {
+		wg.Add(1)
+		go w.run(&wg)
+	}
+	wg.Wait()
 }

@@ -2,7 +2,7 @@ name: "Tempest Example"
 
 target: "http://localhost:6969"
 
-duration: "1m"
+duration: "10s"
 
 concurrency: 2
 

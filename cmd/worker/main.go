@@ -39,7 +39,7 @@ func main() {
 
 	executor := executor.New()
 
-	worker := worker.New(que, store, executor, 2)
+	worker := worker.New(que, store, executor, 3)
 
 	worker.Start()
 }
